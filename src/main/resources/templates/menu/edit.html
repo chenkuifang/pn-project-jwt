@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8" />
+	<title>菜单添加</title>
+	<link rel="stylesheet" href="/layui.2.2.3/layui/css/layui.css" media="all" />
+	
+	<script type="text/javascript" src="/layui.2.2.3/layui/layui.js"></script>
+	<script type="text/javascript" src="/js/menu.js"></script>
+	<script type="text/javascript" src="/js/base.js"></script>
+</head>
+<body class="childrenBody">
+	<form class="layui-form" style="width:80%;">
+		<div class="layui-row" style="margin-top: 20px;">
+		
+			<div class="layui-form-item">
+				<div class="layui-col-md4">
+					<label class="layui-form-label">菜单名称</label>
+					<div class="layui-input-block">
+						<input type="hidden" name="menuId" th:value="${menu.menuId}" />
+						<input type="text" name="name" th:value="${menu.name}" class="layui-input" lay-verify="required" />
+					</div>
+				</div>
+				<div class="layui-col-md8">
+					<label class="layui-form-label">链接</label>
+					<div class="layui-input-block">
+						<input type="text" name="url" th:value="${menu.url}" class="layui-input"/>
+					</div>
+				</div>
+			</div>
+			
+			<div class="layui-form-item">
+				<div class="layui-col-md4">
+					<label class="layui-form-label">上级菜单</label>
+					<div class="layui-input-block">
+						<select name="parentId" id="parentId">
+							 <option value="0" th:selected="${menu.parentId == 0 ? 'true' : 'false'}">根目录</option>
+						  	 <option th:each="item : ${parentMenus}" th:value="${item.menuId}" th:text="${item.name}"
+						  	 	th:selected="${menu.parentId == item.menuId ? 'true' : 'false'}"></option>
+						</select>
+					</div>
+				</div>
+				<div class="layui-col-md4">
+					<label class="layui-form-label">类型</label>
+					<div class="layui-input-block">
+						<select name="type" id="type">
+						  	<option value="0" th:selected="${menu.type == 0 ? 'true' : 'false'}">目录</option>
+						  	<option value="1" th:selected="${menu.type == 1 ? 'true' : 'false'}">菜单</option>
+						  	<option value="2" th:selected="${menu.type == 2 ? 'true' : 'false'}">按钮</option>
+						</select>
+					</div>
+					 
+				</div>
+				<div class="layui-col-md4">
+					<label class="layui-form-label">排序</label>
+					<div class="layui-input-block">
+						<input type="text" name="orderNum" th:value="${menu.orderNum}" class="layui-input" lay-verify="required|number" />
+					</div>
+				</div>
+			</div>
+			
+			<div class="layui-form-item">
+				<div class="layui-col-md4">
+					<label class="layui-form-label">图标</label>
+					<div class="layui-input-block">
+						<input type="text" name="icon" th:value="${menu.icon}" th:readonly="true" class="layui-input layui-disabled" />
+					</div>
+				</div>
+				
+				<div class="layui-col-md4" th:if="${action == 'edit'}">
+					<label class="layui-form-label">创建时间</label>
+					<div class="layui-input-block">
+						<input type="text" th:value="${#dates.format(menu.createTime,'yyyy-MM-dd HH:mm:ss')}" th:readonly="true"  class="layui-input layui-disabled" />
+					</div>
+				</div>
+			
+				<div class="layui-col-md4" th:if="${action == 'edit'}">
+					<label class="layui-form-label">修改时间</label>
+					<div class="layui-input-block">
+						<input type="text" th:value="${#dates.format(menu.updateTime,'yyyy-MM-dd HH:mm:ss')}" th:readonly="true" class="layui-input layui-disabled" />
+					</div>
+				</div>
+			</div>
+			
+			<div class="layui-form-item">
+				<div class="layui-input-block">
+					<button class="layui-btn" lay-submit="" lay-filter="saveSubmit">立即提交</button>
+					<button type="reset" class="layui-btn layui-btn-primary">重置</button>
+			    </div>
+			</div>
+		</div>
+	</form>
+</body>
+</html>

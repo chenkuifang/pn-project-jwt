@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.demo.mapper.RoleMapper">
+	<resultMap id="roleMap" type="Role">
+		<id property="roleId" column="role_id" jdbcType="NUMERIC"/>
+		<result property="roleName" column="role_name" jdbcType="VARCHAR"/>
+		<result property="remark" column="remark" jdbcType="VARCHAR"/>
+		<result property="createId" column="create_id" jdbcType="NUMERIC"/>
+		<result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+		<result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+		<result property="status" column="status" jdbcType="NUMERIC"/>
+		<!-- one to one -->
+		<association property="user" column="createId" javaType="User">
+		    <result property="userName" column="create_name"/>
+	  	</association>
+	</resultMap>
+
+	<sql id="columns">
+		a.role_id,a.role_name,a.remark,a.create_id,a.create_time,a.update_time,a.status
+	</sql>
+	
+	<insert id="add" parameterType="Role">
+		insert into pn_role 
+			(role_id,role_name,remark,create_id,create_time,update_time,status)
+		values 
+			(#{roleId,jdbcType=NUMERIC}, #{roleName,jdbcType=VARCHAR}, 
+			#{remark,jdbcType=VARCHAR}, #{createId,jdbcType=NUMERIC},
+			#{createTime,jdbcType=TIMESTAMP}, #{updateTime,jdbcType=TIMESTAMP}, #{status,jdbcType=NUMERIC})
+	</insert>
+	
+	<select id="get" parameterType="java.lang.Integer" resultMap="roleMap">
+		select <include refid="columns"/> 
+		from pn_role a
+		where 
+		role_id=#{roleId} and a.status &lt; 64
+	</select>
+	
+	<select id="list" parameterType="java.util.Map" resultMap="roleMap">
+		select <include refid="columns"/> 
+		from pn_role a
+		where a.status &lt; 64
+		<if test="whereSql!=null">
+			and ${whereSql}
+		</if>
+		<choose>
+			<when test="orderSql!=null">
+                order by ${orderSql}
+			</when>
+			<otherwise>
+                order by role_id
+			</otherwise>
+		</choose>
+	</select>
+	
+	<select id="listPage" parameterType="java.util.Map" resultMap="roleMap">
+		select <include refid="columns"/>
+			,b.user_name as create_name
+		from pn_role a
+		left join pn_user b on a.create_id = b.id
+		where a.status &lt; 64
+		<if test="roleName != null and roleName != ''">
+			and a.role_name like '%${roleName}%'
+		</if>
+		<choose>
+			<when test="orderSql!=null">
+                order by ${orderSql}
+			</when>
+			<otherwise>
+                order by a.role_id
+			</otherwise>
+		</choose>
+		limit ${offset},${limit}
+	</select>
+	
+	<!-- 根据条件获取所有行数，一般提供列表翻页使用，这一步也可以在mybatis拦截器中完成 -->
+	<select id="countPage" parameterType="java.util.Map" resultType="java.lang.Integer">
+		select count(1)
+		from pn_role a
+		left join pn_user b on a.create_id = b.id
+		where a.status &lt; 64
+		<if test="roleName != null and roleName != ''">
+			and a.role_name like '%${roleName}%'
+		</if>
+	</select>
+	
+	<update id="update" parameterType="Role">
+		update pn_role
+		<trim prefix="set" suffixOverrides=",">
+			<if test="roleName!=null and roleName!=''">
+				role_name=#{roleName,jdbcType=VARCHAR},
+			</if>
+			<if test="remark!=null and remark!=''">
+				remark=#{remark,jdbcType=VARCHAR},
+			</if>
+			<if test="createId!=null">
+				create_id=#{createId,jdbcType=NUMERIC},
+			</if>
+			<if test="updateTime!=null">
+				update_time=#{updateTime,jdbcType=TIMESTAMP},
+			</if>
+			<!-- !=''是用来判断String类型的，如果Integer=0的情况下 ==''是一致的 -->
+			<if test="status!=null">
+				status=#{status,jdbcType=NUMERIC},
+			</if>
+		</trim>
+		where
+		role_id=#{roleId}
+	</update>
+
+	<delete id="remove" parameterType="java.lang.Integer">
+		update pn_role set status = status + 64
+		where role_id=#{roleId}
+	</delete>
+	
+	<delete id="removeBatch" parameterType="java.lang.String">
+		update pn_role set status = status + 64
+		where role_id in
+		 <foreach item="item" collection="array" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+	</delete>
+
+	<!-- 角色菜单设置-->
+	<insert id="addMenuBatch" parameterType="java.util.List">
+		insert into pn_role_menu
+		(id,role_id,menu_id)
+		values
+		<foreach item="item" collection="list" separator="," index="index">
+			(
+				#{item.id,jdbcType=NUMERIC}
+				,#{item.roleId,jdbcType=NUMERIC}
+				,#{item.menuId,jdbcType=NUMERIC}
+			)
+		</foreach>
+	</insert>
+
+	<delete id="removeMenuByRoleId" parameterType="java.lang.Integer">
+		delete from pn_role_menu
+		where role_id=#{roleId}
+	</delete>
+
+</mapper>
