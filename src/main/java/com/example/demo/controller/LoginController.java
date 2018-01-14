@@ -6,7 +6,6 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.stereotype.Controller;
@@ -38,9 +37,10 @@ import io.jsonwebtoken.Claims;
 public class LoginController {
 
 	@Autowired
-	private StringRedisTemplate template;
+	private StringRedisTemplate redisTemplate;
 	@Autowired
 	private UserService UserService;
+
 	// @Value("${pn.redis.expirationTime}")
 	// private long expirationTime;
 
@@ -90,13 +90,14 @@ public class LoginController {
 
 				token = TokenUtils.createToken(webContext, userName);
 
+				// TODO 这一步能不能直接保存webContext到本地线程中,这样就少了一步再次解密token的过程
 				Claims claims = TokenUtils.parseToken(token);
 				WebContextUtils.setClaims(claims);
 
 				// 保存有效token到redis中
-				ValueOperations<String, String> ops = template.opsForValue();
+				ValueOperations<String, String> ops = redisTemplate.opsForValue();
 				try {
-					ops.set("user&" + user.getId(), token);
+					ops.set("user:" + user.getId(), token);
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
@@ -118,11 +119,9 @@ public class LoginController {
 		String newToken = TokenUtils.refreshToken(token);
 		int userId = WebContextUtils.getCurrentUserId();
 		// 保存有效token到redis中
-		ValueOperations<String, String> ops = template.opsForValue();
+		ValueOperations<String, String> ops = redisTemplate.opsForValue();
 		try {
-			String aa =ops.get("user&" + userId);
-			System.err.println("redis中旧的token:"+aa);
-			ops.set("user&" + userId, newToken);
+			ops.set("user:" + userId, newToken);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

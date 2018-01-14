@@ -1,5 +1,6 @@
 package com.example.demo.common.util;
 
+import java.io.Serializable;
 import java.security.Key;
 import java.util.Date;
 import java.util.Map;
@@ -11,6 +12,7 @@ import javax.xml.bind.DatatypeConverter;
 
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
+import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 
 import com.example.demo.common.Constants;
@@ -28,9 +30,12 @@ import io.jsonwebtoken.SignatureAlgorithm;
  * @date 2017年9月26日 下午6:05:10
  * @version V1.0
  */
-public final class TokenUtils {
-	public TokenUtils() {
+@Component
+public final class TokenUtils implements Serializable {
+	private TokenUtils() {
 	}
+
+	private static final long serialVersionUID = -8834545248681200597L;
 
 	/**
 	 * 私钥
@@ -135,12 +140,6 @@ public final class TokenUtils {
 
 		String newToken = Jwts.builder().setClaims(claims).signWith(signatureAlgorithm, secret)
 				.setNotBefore(createdDate).compact();
-
-		// new
-		final Claims newClaims = parseToken(newToken);
-
-		// System.err.println("newToken:" + newToken);
-		// System.err.println("newToken过期时间:" + newClaims.getExpiration());
 		return newToken;
 	}
 
@@ -153,7 +152,7 @@ public final class TokenUtils {
 	 * 
 	 * @param request
 	 *            http 请求
-	 * @return
+	 * @return token
 	 */
 	public static String getTokenFromRequest(HttpServletRequest request) {
 		Cookie[] cookies = request.getCookies();
@@ -169,7 +168,8 @@ public final class TokenUtils {
 	 * 校验token是否有效,结合redis做黑名单
 	 * 
 	 * @param token
-	 * @return
+	 *            请求的token
+	 * @return true 为有效；false 为无效
 	 */
 	public static Boolean validateToken(String token) {
 		Claims claims = parseToken(token);
@@ -182,9 +182,10 @@ public final class TokenUtils {
 		int userId = WebContextUtils.getCurrentUserId();
 
 		// 获取有效的token
-		StringRedisTemplate template = new StringRedisTemplate();
-		ValueOperations<String, String> ops = template.opsForValue();
-		String validToken = ops.get("userId&" + userId);
+		String key = "user:" + userId;
+
+		// String validToken = ops.get("user:" + userId);
+		String validToken = JedisUtils.get(key);
 
 		final Date expiration = claims.getExpiration();
 		return (expiration.after(new Date()) && ISSUER.equals(issuer) && token.equals(validToken));
@@ -193,8 +194,11 @@ public final class TokenUtils {
 	/**
 	 * 校验token是否有效
 	 * 
+	 * @param claims
+	 *            请求的token用户载荷
 	 * @param token
-	 * @return
+	 *            请求的token
+	 * @return true 为有效；false 为无效
 	 */
 	public static Boolean validateToken(Claims claims, String token) {
 		if (claims == null) {
@@ -204,13 +208,15 @@ public final class TokenUtils {
 		String issuer = claims.getIssuer();
 
 		String userId = getUserIdFromClamis(claims);
+		System.err.println("验证开始读取redis的token...................！！");
+		// 从redis中获取有效的token
+		// ValueOperations<String, String> ops = template.opsForValue();
+		String key = "user:".concat(userId);
+		// String validToken = ops.get(key);
 
-		// 获取有效的token
-		StringRedisTemplate template = new StringRedisTemplate();
-		ValueOperations<String, String> ops = template.opsForValue();
-		String key = "user&".concat(userId);
-		String validToken = ops.get(key);
+		String validToken = JedisUtils.get(key);
 
+		System.err.println("验证的时候读取到的token:" + validToken);
 		final Date expiration = claims.getExpiration();
 		return (expiration.after(new Date()) && ISSUER.equals(issuer) && token.equals(validToken));
 	}
@@ -250,17 +256,17 @@ public final class TokenUtils {
 		return (expiration.after(new Date()) && ISSUER.equals(issuer) && token.equals(validToken));
 	}
 
-	/**
-	 * 获取token的过期时间
-	 * 
-	 * @param token
-	 * @return
-	 */
-	private static Date getExpirationDateFromToken(String token) {
-		Claims clamis = parseToken(token);
-		Assert.notNull(clamis, "clamis is must not be null");
-		return clamis.getExpiration();
-	}
+//	/**
+//	 * 获取token的过期时间
+//	 * 
+//	 * @param token
+//	 * @return
+//	 */
+//	private static Date getExpirationDateFromToken(String token) {
+//		Claims clamis = parseToken(token);
+//		Assert.notNull(clamis, "clamis is must not be null");
+//		return clamis.getExpiration();
+//	}
 
 	private static Date calculateExpirationDate(Date createdDate) {
 		long nowMillis = System.currentTimeMillis();
