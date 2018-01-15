@@ -2,6 +2,7 @@ package com.example.demo.common.util;
 
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
+import org.springframework.stereotype.Component;
 
 /**
  * spring 上下文工具类,避免使用在static方法中，因为这时候bean还没有注入
@@ -9,6 +10,7 @@ import org.springframework.context.ApplicationContextAware;
  * @author QuiFar
  * @version V1.0
  */
+@Component
 public class SpringContextUtils implements ApplicationContextAware {
 
 	private SpringContextUtils() {
