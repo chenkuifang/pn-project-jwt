@@ -30,7 +30,6 @@ import io.jsonwebtoken.SignatureAlgorithm;
  * @date 2017年9月26日 下午6:05:10
  * @version V1.0
  */
-@Component
 public final class TokenUtils implements Serializable {
 	private TokenUtils() {
 	}
@@ -215,7 +214,6 @@ public final class TokenUtils implements Serializable {
 		// String validToken = ops.get(key);
 
 		String validToken = JedisUtils.get(key);
-
 		System.err.println("验证的时候读取到的token:" + validToken);
 		final Date expiration = claims.getExpiration();
 		return (expiration.after(new Date()) && ISSUER.equals(issuer) && token.equals(validToken));
